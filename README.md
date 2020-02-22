@@ -1,6 +1,8 @@
 # randr-rave
 A rave mode for X with RandR.
 
+![Demo](https://i.imgur.com/tp4UX8Y.gif)
+
 ## Dependencies
 Requires `libxcb`.
 
