@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "pcm.h": "c",
+        "asoundlib.h": "c",
+        "rawmidi.h": "c"
+    }
+}
