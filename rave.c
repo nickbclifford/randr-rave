@@ -165,7 +165,10 @@ void set_gamma(xcb_connection_t* conn, xcb_randr_crtc_t crtc, int size, double r
         blue[i] = pow(scaledX, expB) * UINT16_MAX;
     }
 
-    xcb_randr_set_crtc_gamma(conn, crtc, size, red, green, blue);
+    xcb_void_cookie_t gammaCookie = xcb_randr_set_crtc_gamma(conn, crtc, size, red, green, blue);
+    if (xcb_request_check(conn, gammaCookie)) {
+        fprintf(stderr, "failed to change gamma\n");
+    }
 
     free(red);
     free(green);
