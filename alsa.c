@@ -1,10 +1,18 @@
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdio.h>
+#include <time.h>
 #include <alsa/asoundlib.h>
 
 #define SAMPLE_RATE 44100
 #define CHANNELS 2
+#define WINDOW_SIZE 20
+
+long current_time_ms();
 
 int main(int argc, char** argv) {
+    long startingTime = current_time_ms();
+
     if (argc < 2) {
         fprintf(stderr, "specify an ALSA device to capture from\n");
         return 1;
@@ -61,10 +69,40 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    printf("%d frames, sub unit direction %d\n", frames, direction);
+    printf("%d frames per period, sub unit direction %d\n", frames, direction);
 
+    int bufferLen = CHANNELS * frames;
+    int16_t* framebuffer = malloc(bufferLen * sizeof(int16_t)); // one int for each channel
+
+    printf("times are measured with t = 0 ms being program start\n");
+
+    long* periodEnergies = malloc(WINDOW_SIZE * sizeof(long));
+
+    for (int w = 0; w < 50; w++) {
+        for (int i = 0; i < WINDOW_SIZE; i++) {
+            if ((err = snd_pcm_readi(handle, framebuffer, frames)) != frames) {
+                fprintf(stderr, "error reading audio from device: %s\n", snd_strerror(err));
+                return 1;
+            }
+
+            periodEnergies[i] = 0;
+            for (int j = 0; j < bufferLen; j += CHANNELS) {
+                periodEnergies[i] += (framebuffer[j] * framebuffer[j]) + (framebuffer[j + 1] * framebuffer[j + 1]);
+            }
+        }
+    }
+
+    free(periodEnergies);
+    free(framebuffer);
     snd_pcm_hw_params_free(params);
     snd_pcm_close(handle);
 
     return 0;
+}
+
+long current_time_ms() {
+    struct timespec spec;
+    clock_gettime(CLOCK_MONOTONIC, &spec);
+
+    return (spec.tv_sec * 1000) + (spec.tv_nsec / 1000000) /* ns to ms */;
 }
