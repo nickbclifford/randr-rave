@@ -4,9 +4,10 @@
 #include <time.h>
 #include <alsa/asoundlib.h>
 
+#include "kissfft/kiss_fft.h"
+
 #define SAMPLE_RATE 44100
 #define CHANNELS 2
-#define WINDOW_SIZE 20
 
 long current_time_ms();
 
@@ -71,28 +72,49 @@ int main(int argc, char** argv) {
 
     printf("%d frames per period, sub unit direction %d\n", frames, direction);
 
-    int bufferLen = CHANNELS * frames;
-    int16_t* framebuffer = malloc(bufferLen * sizeof(int16_t)); // one int for each channel
+    int16_t* framebuffer = malloc(2 * frames * sizeof(int16_t));
+
+    // prepare FFT
+    kiss_fft_cfg cfg = kiss_fft_alloc(frames, 0, NULL, NULL);
+
+    kiss_fft_cpx* fftIn = malloc(frames * sizeof(kiss_fft_cpx));
+    kiss_fft_cpx* fftOut = malloc(frames * sizeof(kiss_fft_cpx));
+
 
     printf("times are measured with t = 0 ms being program start\n");
 
-    long* periodEnergies = malloc(WINDOW_SIZE * sizeof(long));
+    
 
-    for (int w = 0; w < 50; w++) {
-        for (int i = 0; i < WINDOW_SIZE; i++) {
-            if ((err = snd_pcm_readi(handle, framebuffer, frames)) != frames) {
-                fprintf(stderr, "error reading audio from device: %s\n", snd_strerror(err));
-                return 1;
-            }
+    for (int w = 0; w < 250; w++) {
+        if ((err = snd_pcm_readi(handle, framebuffer, frames)) != frames) {
+            fprintf(stderr, "error reading audio from device: %s\n", snd_strerror(err));
+            return 1;
+        }
 
-            periodEnergies[i] = 0;
-            for (int j = 0; j < bufferLen; j += CHANNELS) {
-                periodEnergies[i] += (framebuffer[j] * framebuffer[j]) + (framebuffer[j + 1] * framebuffer[j + 1]);
+        for (int i = 0; i < 2 * frames; i += 2) {
+            fftIn[i].r = framebuffer[i] + framebuffer[i + 1];
+        }
+
+        kiss_fft(cfg, fftIn, fftOut);     
+
+        printf("[");   
+
+        for (int i = 0; i < frames; i++) {
+            kiss_fft_cpx val = fftOut[i];
+            kiss_fft_scalar magnitude = (val.r * val.r) + (val.i + val.i);
+
+            printf("%f", magnitude);
+            if (i != frames - 1) {
+                printf(", ");
             }
         }
+
+        printf("]\n");
+        
     }
 
-    free(periodEnergies);
+
+    kiss_fft_free(cfg);
     free(framebuffer);
     snd_pcm_hw_params_free(params);
     snd_pcm_close(handle);
