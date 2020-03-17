@@ -3,6 +3,8 @@
         "pcm.h": "c",
         "asoundlib.h": "c",
         "rawmidi.h": "c",
-        "condition_variable": "c"
+        "condition_variable": "c",
+        "time.h": "c",
+        "math.h": "c"
     }
 }

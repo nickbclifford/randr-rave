@@ -1,12 +1,17 @@
+import re
+import os
 import matplotlib.pyplot as plt
 
-with open('fft.txt', 'r') as file:
-    windows = file.readlines()
+line_match = re.compile(r'\[window (?:\d+), (\d+) ms\] total bass: ([\d.]+)')
 
-    plt.ylim(top = 50000)
+with open('bass.txt', 'r') as file:
+    # plt.ylim(top = 25000)
 
-    for i, window in enumerate(windows):
-        line, = plt.plot(eval(window), 'b')
-        plt.xlabel(f'window {i}')
-        plt.savefig(f'plot{i}.png')
-        line.remove()
+    for line in file:
+        matches = line_match.match(line)
+        plt.plot(int(matches[1]), float(matches[2]), 'ro')
+    
+    plt.xlabel('time since program start (ms)')
+    plt.ylabel('total bass intensity')
+
+    plt.show()

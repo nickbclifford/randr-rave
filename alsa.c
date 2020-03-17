@@ -2,12 +2,14 @@
 
 #include <stdio.h>
 #include <time.h>
+#include <math.h>
 #include <alsa/asoundlib.h>
 
 #include "kissfft/kiss_fft.h"
 
 #define SAMPLE_RATE 44100
 #define CHANNELS 2
+#define BASS_FREQ_LIMIT 200
 
 long current_time_ms();
 
@@ -70,8 +72,6 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    printf("%d frames per period, sub unit direction %d\n", frames, direction);
-
     int16_t* framebuffer = malloc(2 * frames * sizeof(int16_t));
 
     // prepare FFT
@@ -79,11 +79,6 @@ int main(int argc, char** argv) {
 
     kiss_fft_cpx* fftIn = malloc(frames * sizeof(kiss_fft_cpx));
     kiss_fft_cpx* fftOut = malloc(frames * sizeof(kiss_fft_cpx));
-
-
-    printf("times are measured with t = 0 ms being program start\n");
-
-    
 
     for (int w = 0; w < 250; w++) {
         if ((err = snd_pcm_readi(handle, framebuffer, frames)) != frames) {
@@ -93,27 +88,27 @@ int main(int argc, char** argv) {
 
         for (int i = 0; i < 2 * frames; i += 2) {
             fftIn[i].r = framebuffer[i] + framebuffer[i + 1];
+            fftIn[i].i = 0;
         }
 
         kiss_fft(cfg, fftIn, fftOut);     
 
-        printf("[");   
+        double totalBass = 0;
 
-        for (int i = 0; i < frames; i++) {
+        for (int i = 0; i < BASS_FREQ_LIMIT; i++) {
             kiss_fft_cpx val = fftOut[i];
-            kiss_fft_scalar magnitude = (val.r * val.r) + (val.i + val.i);
-
-            printf("%f", magnitude);
-            if (i != frames - 1) {
-                printf(", ");
+            kiss_fft_scalar magnitude = sqrt((val.r * val.r) + (val.i * val.i));
+            if (magnitude < 0) {
+                printf("real: %f, imaginary: %f\n", val.r, val.i);
             }
+            totalBass += magnitude;
         }
-
-        printf("]\n");
         
+        printf("[window %d, %d ms] total bass: %f\n", w, current_time_ms() - startingTime, totalBass);
     }
 
-
+    free(fftIn);
+    free(fftOut);
     kiss_fft_free(cfg);
     free(framebuffer);
     snd_pcm_hw_params_free(params);

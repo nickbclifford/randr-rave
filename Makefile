@@ -8,7 +8,7 @@ $(kissfft):
 	make -C kissfft
 
 alsa: alsa.c $(kissfft)
-	gcc -o alsa alsa.c $(kissfft) -lasound -ggdb -Wl,-R$(kissfft_dir)
+	gcc -o alsa alsa.c $(kissfft) -lm -lasound -ggdb -Wl,-R$(kissfft_dir)
 
 clean:
 	-rm rave alsa
