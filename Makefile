@@ -7,8 +7,8 @@ rave: rave.c
 $(kissfft):
 	make -C kissfft
 
-alsa: alsa.c $(kissfft)
-	gcc -o alsa alsa.c $(kissfft) -lm -lasound -ggdb -Wl,-R$(kissfft_dir)
+pulseaudio: pulseaudio.c $(kissfft)
+	gcc -o pulseaudio pulseaudio.c $(kissfft) -lm -lpulse -lpulse-simple -ggdb -Wl,-R$(kissfft_dir)
 
 clean:
-	-rm rave alsa
+	-rm rave pulseaudio
