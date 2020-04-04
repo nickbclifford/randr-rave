@@ -98,9 +98,6 @@ int main(int argc, char** argv) {
         for (int i = 0; i < BASS_FREQ_LIMIT; i++) {
             kiss_fft_cpx val = fftOut[i];
             kiss_fft_scalar magnitude = sqrt((val.r * val.r) + (val.i * val.i));
-            if (magnitude < 0) {
-                printf("real: %f, imaginary: %f\n", val.r, val.i);
-            }
             totalBass += magnitude;
         }
         

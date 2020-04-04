@@ -5,6 +5,7 @@
         "rawmidi.h": "c",
         "condition_variable": "c",
         "time.h": "c",
-        "math.h": "c"
+        "math.h": "c",
+        "kiss_fft.h": "c"
     }
 }
